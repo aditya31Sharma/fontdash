@@ -169,6 +169,9 @@ class Handler(BaseHTTPRequestHandler):
                 STATE["adobe"] = bool(payload["adobe"])
             return self._send(200, {"scan_dirs": STATE["scan_dirs"],
                                     "adobe": STATE["adobe"]})
+        if path == "/api/quit":
+            threading.Timer(0.3, lambda: os._exit(0)).start()
+            return self._send(200, {"ok": True})
         if path == "/api/reveal":
             target = payload.get("path") or scanner.INSTALL_DIR
             if os.path.exists(target):

@@ -3,10 +3,11 @@
 
 import { describe } from './fontlib.js';
 
+// A page served over https cannot call http://127.0.0.1 - Chrome and Safari both
+// block it as mixed content. So the dashboard only drives your machine when it is
+// served BY your machine. On github.io this file just shows the one-line installer.
 const LOCAL = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
-const AGENT = LOCAL ? '' : 'http://127.0.0.1:8777';
-const START_CMD =
-  'git clone https://github.com/aditya31Sharma/fontdash.git ~/fontdash 2>/dev/null; python3 ~/fontdash/fontdash.py --agent';
+const INSTALL_CMD = 'curl -fsSL https://aditya31sharma.github.io/fontdash/install.sh | bash';
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c =>
@@ -14,48 +15,55 @@ const esc = s => String(s ?? '').replace(/[&<>"]/g, c =>
 const short = p => String(p).replace(/^\/Users\/[^/]+/, '~');
 const fmt = n => Number(n).toLocaleString();
 
-let DATA = null, picked = new Set(), retryTimer = null;
+let DATA = null, picked = new Set();
 
 async function api(path, opts) {
-  const r = await fetch(AGENT + path, opts);
+  const r = await fetch(path, opts);
   if (!r.ok) throw new Error('agent returned ' + r.status);
   return r.json();
 }
 
 // ---------- connect ----------
 
-async function connect({ quiet = false } = {}) {
-  if (!quiet) $('#stage').innerHTML = `<div class="card"><p class="muted">Looking for the helper…</p></div>`;
+async function connect() {
+  if (!LOCAL) return setup();
   try {
     const ping = await api('/api/ping');
-    clearInterval(retryTimer); retryTimer = null;
-    $('#status').innerHTML = `<span class="dot ok"></span>connected · ${esc(short(ping.install_dir))}`;
+    $('#status').innerHTML =
+      `<span class="dot ok"></span>${esc(short(ping.install_dir))}
+       <button id="quit" class="link">quit</button>`;
+    $('#quit').onclick = async () => {
+      await api('/api/quit', { method: 'POST' }).catch(() => {});
+      document.body.innerHTML = '<div class="wrap" style="padding:80px 22px">' +
+        '<p class="muted">Stopped. Close this tab.</p></div>';
+    };
     return scan();
   } catch (err) {
-    $('#status').innerHTML = `<span class="dot"></span>helper not running`;
-    setup(err);
-    if (!retryTimer) retryTimer = setInterval(() => connect({ quiet: true }).catch(() => {}), 3000);
-    throw err;
+    $('#status').innerHTML = `<span class="dot"></span>not responding`;
+    $('#stage').innerHTML =
+      `<div class="card"><h3>The dashboard stopped</h3>
+       <p class="muted">Reopen Font Dashboard from your Applications folder.</p></div>`;
   }
 }
 
 function setup() {
+  $('#status').innerHTML = `<span class="dot"></span>not installed yet`;
   $('#stage').innerHTML = `
     <div class="card setup">
-      <h3>Start the helper once</h3>
-      <p>A web page cannot read your Adobe cache or write to your Fonts folder on its
-         own, so a small helper does that part. It runs only on your machine and only
-         while this page is open in front of you.</p>
-      <div class="cmd"><code id="cmd">${esc(START_CMD)}</code>
+      <h3>Install it once, then it runs itself</h3>
+      <p>Paste this into Terminal. It sets up <b>Font Dashboard</b> in your
+         Applications folder and opens it.</p>
+      <div class="cmd"><code>${esc(INSTALL_CMD)}</code>
         <button id="copy" class="primary">Copy</button></div>
-      <p class="muted">Paste it into Terminal. This page connects by itself the moment
-         it is running - nothing else to do.</p>
-      <p class="muted">Prefer not to use a browser at all?
-         <code>python3 ~/fontdash/fontdash.py --install-new</code> does the whole job
-         from the terminal.</p>
+      <p class="muted">After that you double-click the app. It checks your Adobe
+         Creative Cloud fonts and your download folders, shows what is new, and
+         installs whatever you tick.</p>
+      <p class="muted">This page cannot do that part itself: browsers block a website
+         from reaching your own machine, which is the rule that stops any other site
+         doing the same thing. The app is the same dashboard, served locally.</p>
     </div>`;
   $('#copy').onclick = async () => {
-    await navigator.clipboard.writeText(START_CMD);
+    await navigator.clipboard.writeText(INSTALL_CMD);
     $('#copy').textContent = 'Copied';
     setTimeout(() => ($('#copy').textContent = 'Copy'), 1400);
   };
