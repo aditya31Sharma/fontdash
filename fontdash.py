@@ -26,6 +26,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import scanner  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+VERSION = "1.1.0"
+ALLOWED_ORIGINS = {
+    "https://aditya31sharma.github.io",
+    "http://localhost:8777",
+}
 STATE = {"scan_dirs": list(scanner.DEFAULT_SCAN), "adobe": True, "last": None}
 
 
@@ -87,6 +92,23 @@ class Handler(BaseHTTPRequestHandler):
         if os.environ.get("FONTDASH_VERBOSE"):
             super().log_message(fmt, *args)
 
+    def _cors(self):
+        """The hosted dashboard at github.io drives this agent over localhost."""
+        origin = self.headers.get("Origin", "")
+        if origin in ALLOWED_ORIGINS or origin.startswith("http://127.0.0.1") \
+                or origin.startswith("http://localhost"):
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Private-Network", "true")
+            self.send_header("Access-Control-Max-Age", "600")
+
+    def do_OPTIONS(self):
+        self.send_response(204)
+        self._cors()
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def _send(self, code, body, ctype="application/json"):
         if isinstance(body, (dict, list)):
             body = json.dumps(body).encode()
@@ -96,6 +118,7 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", ctype)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        self._cors()
         self.end_headers()
         self.wfile.write(body)
 
@@ -103,11 +126,20 @@ class Handler(BaseHTTPRequestHandler):
         path = self.path.split("?")[0]
         if path == "/":
             try:
-                with open(os.path.join(HERE, "index.html"), "rb") as fh:
+                with open(os.path.join(HERE, "docs", "index.html"), "rb") as fh:
                     return self._send(200, fh.read(), "text/html; charset=utf-8")
             except OSError:
-                return self._send(500, "index.html is missing next to fontdash.py",
-                                  "text/plain")
+                return self._send(500, "docs/index.html is missing", "text/plain")
+        if path in ("/app.js", "/fontlib.js"):
+            try:
+                with open(os.path.join(HERE, "docs", path.lstrip("/")), "rb") as fh:
+                    return self._send(200, fh.read(),
+                                      "application/javascript; charset=utf-8")
+            except OSError:
+                return self._send(404, {"error": "missing"})
+        if path == "/api/ping":
+            return self._send(200, {"ok": True, "app": "fontdash", "version": VERSION,
+                                    "install_dir": scanner.INSTALL_DIR})
         if path == "/api/scan":
             STATE["last"] = scanner.scan(STATE["scan_dirs"], STATE["adobe"])
             return self._send(200, STATE["last"])
@@ -177,6 +209,9 @@ def main():
     ap.add_argument("--no-adobe", action="store_true",
                     help="skip the Creative Cloud font cache")
     ap.add_argument("--no-browser", action="store_true")
+    ap.add_argument("--agent", action="store_true",
+                    help="run headless for the hosted dashboard at "
+                         "aditya31sharma.github.io/fontdash")
     ap.add_argument("--list", action="store_true",
                     help="print what is new and exit, no server")
     ap.add_argument("--install-new", action="store_true",
@@ -199,7 +234,10 @@ def main():
     print("Scanning: %s" % ", ".join(STATE["scan_dirs"]))
     print("Adobe cache: %s" % ("on" if STATE["adobe"] else "off"))
     print("Ctrl+C to stop.")
-    if not args.no_browser:
+    if args.agent:
+        print("Agent mode. Leave this running and use "
+              "https://aditya31sharma.github.io/fontdash/")
+    if not args.no_browser and not args.agent:
         threading.Timer(0.4, lambda: webbrowser.open(url)).start()
     try:
         httpd.serve_forever()
