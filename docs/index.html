@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Font Dashboard</title>
+<meta name="description" content="Find fonts you downloaded but never installed, including the ones Adobe hides. Drop a font here to check what it actually covers.">
+<style>
+:root{
+  --bg:#f6f5f3;--panel:#fff;--ink:#1a1917;--muted:#6d6a65;--line:#e0ddd8;
+  --accent:#1f6f4a;--warn:#8a5a10;--warn-bg:#fdf3e2;--bad:#8c2f2a;--bad-bg:#fbeceb;
+  --ok:#1f6f4a;--ok-bg:#e8f3ed;--code:#f0eee9;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#14150f;--panel:#1c1d17;--ink:#eceade;--muted:#96948a;--line:#2e2f27;
+  --accent:#6fbf8e;--warn:#e0b168;--warn-bg:#2b2416;--bad:#e08a82;--bad-bg:#2c1a18;
+  --ok:#6fbf8e;--ok-bg:#16241c;--code:#22231b;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:15px/1.6 ui-sans-serif,-apple-system,"SF Pro Text",Inter,system-ui,sans-serif}
+.wrap{max-width:780px;margin:0 auto;padding:56px 22px 90px}
+h1{font-size:30px;line-height:1.15;letter-spacing:-.02em;margin:0 0 10px;font-weight:660}
+.lede{font-size:17px;color:var(--muted);margin:0 0 34px;max-width:60ch}
+h2{font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  font-weight:600;margin:44px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+p{margin:0 0 14px;max-width:68ch}
+a{color:var(--accent)}
+code{background:var(--code);padding:1.5px 5px;border-radius:4px;font-size:.88em;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace}
+pre{background:var(--panel);border:1px solid var(--line);border-radius:9px;
+  padding:14px 16px;overflow-x:auto;font-size:13px;line-height:1.65;
+  font-family:ui-monospace,"SF Mono",Menlo,monospace}
+pre code{background:none;padding:0;font-size:inherit}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:0 0 14px}
+th{text-align:left;font-weight:560;color:var(--muted);font-size:12.5px;
+  padding:7px 10px;border-bottom:1px solid var(--line)}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+.drop{border:1.5px dashed var(--line);border-radius:12px;background:var(--panel);
+  padding:38px 24px;text-align:center;cursor:pointer;transition:border-color .12s,background .12s}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--ok-bg)}
+.drop strong{display:block;font-size:16px;margin-bottom:4px}
+.drop span{color:var(--muted);font-size:13.5px}
+.tag{display:inline-block;padding:1px 7px;border-radius:99px;font-size:11.5px;
+  border:1px solid var(--line);color:var(--muted);margin:0 4px 3px 0;white-space:nowrap}
+.tag.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+.tag.warn{background:var(--warn-bg);color:var(--warn);border-color:transparent}
+.tag.bad{background:var(--bad-bg);color:var(--bad);border-color:transparent}
+.res{margin-top:16px}
+.res table{background:var(--panel);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.sub{color:var(--muted);font-size:12.5px;font-family:ui-monospace,Menlo,monospace}
+.note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:0 9px 9px 0;padding:13px 16px;margin:0 0 16px;font-size:14px}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);
+  color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Font Dashboard</h1>
+<p class="lede">Finds fonts you downloaded but never installed, including the ones
+Adobe keeps hidden under names like <code>.30173.otf</code>. macOS, no dependencies.</p>
+
+<div class="note">The dashboard itself runs on your own machine, because installing a
+font and reading Adobe's cache both need filesystem access that a web page is not
+allowed to have. This page is the documentation, plus the font inspector below,
+which does work right here in the browser.</div>
+
+<h2>Run it</h2>
+<pre><code>git clone https://github.com/aditya31Sharma/fontdash.git
+cd fontdash
+python3 fontdash.py</code></pre>
+<p>Opens <code>http://127.0.0.1:8777</code>. Tick what you want, press Install.
+Python 3.8+, which macOS already ships. Nothing to install.</p>
+
+<pre><code>python3 fontdash.py --dir ~/Downloads --dir ~/Dropbox/Fonts
+python3 fontdash.py --no-adobe        # skip the Creative Cloud cache
+python3 fontdash.py --list            # terminal, just report
+python3 fontdash.py --install-new     # terminal, install everything new</code></pre>
+
+<h2>Check a font</h2>
+<p>Drop any <code>.otf</code>, <code>.ttf</code>, <code>.ttc</code> or a whole
+<code>.zip</code> below. It is read in your browser and never uploaded anywhere.</p>
+
+<div class="drop" id="drop">
+  <strong>Drop font files or a zip</strong>
+  <span>or click to choose</span>
+  <input type="file" id="file" multiple accept=".otf,.ttf,.ttc,.otc,.zip" hidden>
+</div>
+<div class="res" id="res"></div>
+
+<h2>What the notes mean</h2>
+<table>
+<tr><th>Note</th><th>What it means</th></tr>
+<tr><td><span class="tag ok">best</span></td><td>Widest character coverage of the files for that face. Install this one.</td></tr>
+<tr><td><span class="tag bad">incomplete</span></td><td>Missing letters, digits or punctuation. Usually a crippled demo.</td></tr>
+<tr><td><span class="tag warn">demo</span></td><td>Names itself a demo, trial or personal-use build.</td></tr>
+<tr><td><span class="tag warn">mislabelled</span></td><td>A <code>.ttf</code> that is really OpenType/CFF inside, or the reverse.</td></tr>
+<tr><td><span class="tag">narrower</span></td><td>A sibling file in the same pack covers more characters.</td></tr>
+</table>
+<p><code>incomplete</code> is the one that bites. Plenty of free display fonts ship an
+<code>.otf</code> with letters only, so a price or a date silently renders as nothing
+and you find out at the proofing stage.</p>
+
+<h2>Which file it installs</h2>
+<p>A pack usually holds <code>.otf</code>, <code>.ttf</code>, <code>.woff</code> and
+<code>.woff2</code> of one typeface. Web formats are ignored, since macOS cannot
+install them. Between the desktop formats the winner is whichever covers more
+characters, with OpenType/CFF breaking a tie. It is not always the <code>.otf</code>.</p>
+<p>Files keep the name they shipped with. Adobe's cache is the exception, because
+<code>.30173.otf</code> is not a name.</p>
+
+<h2>Safety</h2>
+<p>Nothing is deleted, renamed in place or overwritten. A filename that already exists
+in <code>~/Library/Fonts</code> is reported and skipped. The Adobe cache and your scan
+folders are only ever read, and the local server binds to <code>127.0.0.1</code>.</p>
+
+<footer>
+<a href="https://github.com/aditya31Sharma/fontdash">Source on GitHub</a> ·
+Adobe-cache trick from <a href="https://github.com/kalaschnik/adobe-fonts-revealer">adobe-fonts-revealer</a>,
+reimplemented without its <code>lcdf-typetools</code> dependency.
+</footer>
+
+</div>
+
+<script type="module">
+import { describe } from './fontlib.js';
+
+const drop = document.getElementById('drop');
+const input = document.getElementById('file');
+const res = document.getElementById('res');
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c =>
+  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+drop.onclick = () => input.click();
+input.onchange = () => handle([...input.files]);
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over');
+  handle([...e.dataTransfer.files]); };
+
+const FONT_RE = /\.(otf|ttf|ttc|otc)$/i;
+
+async function unzip(file) {
+  // Minimal end-of-central-directory walk, enough for stored+deflated members.
+  const buf = new Uint8Array(await file.arrayBuffer());
+  const dv = new DataView(buf.buffer);
+  let eocd = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 66000); i--)
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error('not a readable zip');
+  const count = dv.getUint16(eocd + 10, true);
+  let ptr = dv.getUint32(eocd + 16, true);
+  const out = [];
+  for (let i = 0; i < count; i++) {
+    if (dv.getUint32(ptr, true) !== 0x02014b50) break;
+    const method = dv.getUint16(ptr + 10, true);
+    const csize = dv.getUint32(ptr + 20, true);
+    const nlen = dv.getUint16(ptr + 28, true);
+    const elen = dv.getUint16(ptr + 30, true);
+    const clen = dv.getUint16(ptr + 32, true);
+    const lho = dv.getUint32(ptr + 42, true);
+    const name = new TextDecoder().decode(buf.subarray(ptr + 46, ptr + 46 + nlen));
+    ptr += 46 + nlen + elen + clen;
+    const base = name.split('/').pop();
+    if (!FONT_RE.test(base) || base.startsWith('._') || name.includes('__MACOSX')) continue;
+    const ln = dv.getUint16(lho + 26, true), le = dv.getUint16(lho + 28, true);
+    const start = lho + 30 + ln + le;
+    const raw = buf.subarray(start, start + csize);
+    let data;
+    if (method === 0) data = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.length);
+    else if (method === 8) {
+      const ds = new DecompressionStream('deflate-raw');
+      data = await new Response(new Blob([raw]).stream().pipeThrough(ds)).arrayBuffer();
+    } else continue;
+    out.push({ name: base, path: name, buffer: data });
+  }
+  return out;
+}
+
+async function handle(files) {
+  if (!files.length) return;
+  res.innerHTML = '<p class="sub">Reading…</p>';
+  const rows = [];
+  for (const f of files) {
+    try {
+      if (/\.zip$/i.test(f.name)) {
+        for (const m of await unzip(f))
+          rows.push({ ...describe(m.buffer, m.name), from: `${f.name} › ${m.path}` });
+      } else if (FONT_RE.test(f.name)) {
+        rows.push({ ...describe(await f.arrayBuffer(), f.name), from: f.name });
+      }
+    } catch (err) {
+      rows.push({ filename: f.name, family: f.name, style: '', outlines: '—',
+        chars: 0, missing: [], flags: ['unreadable: ' + err.message], from: f.name });
+    }
+  }
+  render(rows);
+}
+
+function render(rows) {
+  if (!rows.length) {
+    res.innerHTML = '<p class="sub">No font files in there.</p>';
+    return;
+  }
+  // Mark the widest-coverage file per face, the way the installer picks.
+  const byFace = new Map();
+  for (const r of rows) {
+    const k = r.psname || r.family;
+    if (!byFace.has(k)) byFace.set(k, []);
+    byFace.get(k).push(r);
+  }
+  for (const group of byFace.values()) {
+    group.sort((a, b) => b.chars - a.chars ||
+      (a.outlines === 'CFF' ? -1 : 1) - (b.outlines === 'CFF' ? -1 : 1));
+    group.forEach((r, i) => {
+      r.best = i === 0 && group.length > 1;
+      if (i > 0 && r.chars < group[0].chars) r.flags = [...r.flags, 'narrower'];
+    });
+  }
+  const cls = f => f.startsWith('incomplete') || f.startsWith('unreadable') ? 'bad'
+    : (f === 'demo' || f === 'mislabelled') ? 'warn' : '';
+  res.innerHTML = `<table><tr>
+      <th>Font</th><th>Format</th><th class="num">Glyphs</th><th>Notes</th></tr>
+    ${rows.map(r => `<tr>
+      <td><div>${esc(r.family)} ${esc(r.style || '')}</div>
+          <div class="sub">${esc(r.from)}</div></td>
+      <td>${esc(r.outlines)}</td>
+      <td class="num">${r.chars.toLocaleString()}</td>
+      <td>${r.best ? '<span class="tag ok">best</span>' : ''}
+        ${r.flags.map(f => `<span class="tag ${cls(f)}">${esc(f)}</span>`).join('')}
+        ${r.missing.length ? `<span class="tag bad">no ${esc(r.missing.join(', '))}</span>` : ''}
+        ${!r.flags.length && !r.missing.length ? '<span class="tag ok">complete</span>' : ''}</td>
+    </tr>`).join('')}</table>`;
+}
+</script>
+</body>
+</html>
