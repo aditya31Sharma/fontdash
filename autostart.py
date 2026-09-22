@@ -17,8 +17,19 @@ def _run(*args):
     return subprocess.run(args, capture_output=True, text=True)
 
 
+def _interpreter():
+    """Prefer the system python: a Homebrew path moves on the next upgrade."""
+    system = "/usr/bin/python3"
+    if os.path.exists(system):
+        probe = subprocess.run([system, "-c", "import sys;print(sys.version_info[:2])"],
+                               capture_output=True, text=True)
+        if probe.returncode == 0:
+            return system
+    return sys.executable or system
+
+
 def write_plist(script, port, scan_dirs, adobe):
-    args = [sys.executable or "/usr/bin/python3", script, "--port", str(port), "--no-browser"]
+    args = [_interpreter(), script, "--port", str(port), "--no-browser"]
     for d in scan_dirs or []:
         args += ["--dir", d]
     if not adobe:
