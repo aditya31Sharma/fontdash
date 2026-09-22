@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import scanner  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 ALLOWED_ORIGINS = {
     "https://aditya31sharma.github.io",
     "http://localhost:8777",

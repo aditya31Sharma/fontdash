@@ -13,24 +13,32 @@ It looks in two places that are easy to lose track of:
 Anything already in `~/Library/Fonts` is matched by PostScript name and marked as
 installed, so you only ever see what is genuinely new.
 
-## Run it
-
-No dependencies. Python 3.8+, which macOS already has.
+## Install
 
 ```sh
-git clone https://github.com/aditya31Sharma/fontdash.git
-cd fontdash
-python3 fontdash.py
+curl -fsSL https://aditya31sharma.github.io/fontdash/install.sh | bash
 ```
 
-That opens <http://127.0.0.1:8777>. Tick what you want, press Install.
+That puts the code in `~/.fontdash`, a **Font Dashboard.app** in `~/Applications`
+and a `fontdash` command in `~/bin`. After this you double-click the app: it opens
+<http://127.0.0.1:8777>, checks your machine, and installs whatever you tick.
+
+No dependencies. Python 3.8+, which macOS already ships.
+
+### Why it is not just a website
+
+[aditya31sharma.github.io/fontdash](https://aditya31sharma.github.io/fontdash/) hands
+you the installer and can inspect a font you drag onto it, but it cannot touch your
+machine. Browsers block an `https` page from calling `http://127.0.0.1` as mixed
+content, so a hosted page cannot drive a local helper without a trusted certificate.
+The app is the same dashboard, served by the machine it manages.
 
 ```sh
-python3 fontdash.py --dir ~/Downloads --dir ~/Dropbox/Fonts   # scan other folders
-python3 fontdash.py --no-adobe                                # skip the CC cache
-python3 fontdash.py --port 9000 --no-browser
-python3 fontdash.py --list                                    # terminal, just report
-python3 fontdash.py --install-new                             # terminal, install it all
+fontdash --dir ~/Downloads --dir ~/Dropbox/Fonts   # scan other folders
+fontdash --no-adobe                                # skip the CC cache
+fontdash --port 9000 --no-browser
+fontdash --list                                    # terminal, just report
+fontdash --install-new                             # terminal, install it all
 ```
 
 ## What it tells you about a font
@@ -80,7 +88,9 @@ Files keep the name they shipped with. Adobe's cache is the exception, since
 | `fontdash.py` | Server, CLI and the install step |
 | `scanner.py` | Walks the sources, groups faces, works out what is new |
 | `fontlib.py` | sfnt parser: name table and real glyph coverage |
-| `index.html` | The dashboard |
+| `docs/index.html` | The dashboard, served locally and on Pages |
+| `docs/app.js` | Dashboard logic and the drag-drop inspector |
+| `docs/install.sh` | One-line installer |
 
 Adobe-cache trick borrowed from
 [kalaschnik/adobe-fonts-revealer](https://github.com/kalaschnik/adobe-fonts-revealer),

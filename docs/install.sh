@@ -63,8 +63,8 @@ echo
 # Piped through curl, stdin is the script itself, so ask on the terminal if there
 # is one and simply open it otherwise.
 reply=Y
-if [ -r /dev/tty ]; then
+if [ -t 0 ] || { : </dev/tty; } 2>/dev/null; then
   printf 'Open it now? [Y/n] '
-  read -r reply </dev/tty || reply=Y
+  { read -r reply </dev/tty; } 2>/dev/null || reply=Y
 fi
 case "${reply:-Y}" in [Nn]*) echo "Open it later from ~/Applications." ;; *) open "$APP" ;; esac
