@@ -94,8 +94,24 @@ function groups() {
 function render() {
   const newOnes = DATA.candidates.filter(c => !c.installed && c.recommended);
   const gs = groups();
+  const blocked = (DATA.dir_status || []).filter(d => d.exists && !d.readable);
 
   $('#stage').innerHTML = `
+    ${blocked.length ? `<div class="card blocked">
+      <h3>macOS is hiding ${blocked.length === 1 ? 'a folder' : 'some folders'} from this dashboard</h3>
+      <p>${blocked.map(d => `<code>${esc(short(d.path))}</code>`).join(' and ')}
+         ${blocked.length === 1 ? 'is' : 'are'} unreadable, so downloaded fonts there are
+         invisible right now. Your Adobe fonts still show up.</p>
+      <p class="muted">This happens because the dashboard keeps running in the
+         background, and macOS only lets background programs into Downloads and
+         Desktop if you allow it. Grant <b>Full Disk Access</b> to
+         <code>/usr/bin/python3</code>: press the button, click <b>+</b>, then
+         <b>Cmd-Shift-G</b> and paste <code>/usr/bin/python3</code>.</p>
+      <p><button id="privacy" class="primary">Open Privacy settings</button>
+         <button id="recheck">Re-check</button></p>
+      <p class="muted">Not worth the bother? <code>fontdash --install-new</code> in
+         Terminal always sees everything, and so does the app in Applications.</p>
+    </div>` : ''}`+`
     <div class="toolbar">
       <div class="stats">
         <b>${fmt(newOnes.length)}</b> new
@@ -112,6 +128,11 @@ function render() {
       : `<div class="card empty">Nothing new. Everything found is already installed.<br>
          <span class="muted">Tick <em>show installed</em> to see the lot.</span></div>`}</div>`;
 
+  const priv = $('#privacy');
+  if (priv) {
+    priv.onclick = () => api('/api/privacy', { method: 'POST' }).catch(() => {});
+    $('#recheck').onclick = () => scan().catch(() => connect());
+  }
   $('#rescan').onclick = () => scan().catch(() => connect());
   $('#go').onclick = install;
   $('#showall').onchange = render;

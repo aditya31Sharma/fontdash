@@ -27,6 +27,13 @@ It also registers a launchd agent, so the dashboard is simply always there at
 <http://127.0.0.1:8777> - bookmark it. It starts at login and restarts itself if it
 crashes. Quitting from the UI keeps it down until you open the app again.
 
+**One caveat.** macOS refuses background programs access to Downloads and Desktop,
+so the always-on service sees your Adobe fonts but not your downloaded ones until you
+grant **Full Disk Access** to `/usr/bin/python3` (System Settings › Privacy & Security
+› Full Disk Access › **+** › Cmd-Shift-G › `/usr/bin/python3`). The dashboard detects
+this and says so rather than quietly showing nothing. Running `fontdash` from Terminal
+or opening the app is unaffected.
+
 ```sh
 fontdash --autostart status   # is it registered and responding?
 fontdash --autostart off      # stop it coming back at login

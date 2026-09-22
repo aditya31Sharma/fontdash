@@ -173,6 +173,10 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/quit":
             threading.Timer(0.3, lambda: os._exit(0)).start()
             return self._send(200, {"ok": True})
+        if path == "/api/privacy":
+            os.system('open "x-apple.systempreferences:'
+                      'com.apple.preference.security?Privacy_AllFiles"')
+            return self._send(200, {"ok": True})
         if path == "/api/reveal":
             target = payload.get("path") or scanner.INSTALL_DIR
             if os.path.exists(target):

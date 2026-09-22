@@ -141,6 +141,26 @@ def _rank(cand):
     )
 
 
+def dir_status(paths):
+    """macOS blocks background agents from Downloads and Desktop unless the
+    binary has Full Disk Access, and it fails silently. Report it explicitly."""
+    out = []
+    for d in paths:
+        d = os.path.expanduser(d)
+        row = {"path": d, "exists": os.path.isdir(d), "readable": False,
+               "entries": 0, "error": ""}
+        if row["exists"]:
+            try:
+                row["entries"] = len(os.listdir(d))
+                row["readable"] = True
+            except PermissionError as exc:
+                row["error"] = "permission denied (%s)" % exc.errno
+            except OSError as exc:
+                row["error"] = str(exc)
+        out.append(row)
+    return out
+
+
 def scan(scan_dirs=None, include_adobe=True):
     scan_dirs = scan_dirs if scan_dirs is not None else DEFAULT_SCAN
     cands = []
@@ -174,6 +194,7 @@ def scan(scan_dirs=None, include_adobe=True):
 
     result.sort(key=lambda c: (c["installed"], c["family"].lower(), _rank(c)))
     return {
+        "dir_status": dir_status(scan_dirs),
         "candidates": result,
         "installed_count": len(by_file),
         "scan_dirs": scan_dirs,
