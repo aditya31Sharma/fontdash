@@ -60,11 +60,5 @@ echo "Installed."
 echo "  Double-click:  ~/Applications/Font Dashboard.app"
 echo "  Terminal:      ~/bin/fontdash --list   |   ~/bin/fontdash --install-new"
 echo
-# Piped through curl, stdin is the script itself, so ask on the terminal if there
-# is one and simply open it otherwise.
-reply=Y
-if [ -t 0 ] || { : </dev/tty; } 2>/dev/null; then
-  printf 'Open it now? [Y/n] '
-  { read -r reply </dev/tty; } 2>/dev/null || reply=Y
-fi
-case "${reply:-Y}" in [Nn]*) echo "Open it later from ~/Applications." ;; *) open "$APP" ;; esac
+# Just open it. FONTDASH_NO_OPEN=1 skips this.
+[ -n "${FONTDASH_NO_OPEN:-}" ] || open "$APP"
