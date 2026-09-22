@@ -23,6 +23,16 @@ That puts the code in `~/.fontdash`, a **Font Dashboard.app** in `~/Applications
 and a `fontdash` command in `~/bin`. After this you double-click the app: it opens
 <http://127.0.0.1:8777>, checks your machine, and installs whatever you tick.
 
+It also registers a launchd agent, so the dashboard is simply always there at
+<http://127.0.0.1:8777> - bookmark it. It starts at login and restarts itself if it
+crashes. Quitting from the UI keeps it down until you open the app again.
+
+```sh
+fontdash --autostart status   # is it registered and responding?
+fontdash --autostart off      # stop it coming back at login
+fontdash --autostart on       # put it back
+```
+
 No dependencies. Python 3.8+, which macOS already ships.
 
 ### Why it is not just a website
@@ -91,6 +101,7 @@ Files keep the name they shipped with. Adobe's cache is the exception, since
 | `docs/index.html` | The dashboard, served locally and on Pages |
 | `docs/app.js` | Dashboard logic and the drag-drop inspector |
 | `docs/install.sh` | One-line installer |
+| `autostart.py` | launchd agent, so it stays up on localhost |
 
 Adobe-cache trick borrowed from
 [kalaschnik/adobe-fonts-revealer](https://github.com/kalaschnik/adobe-fonts-revealer),

@@ -55,10 +55,17 @@ exec /usr/bin/env python3 "$HOME/.fontdash/fontdash.py" "$@"
 CLI
 chmod +x "$HOME/bin/fontdash"
 
+echo "Setting it to stay running at http://127.0.0.1:8777"
+python3 "$SRC/fontdash.py" --autostart on >/dev/null 2>&1 \
+  && echo "  autostart: on (survives logout and restart)" \
+  || echo "  autostart: could not register, use 'fontdash --autostart on' to retry"
+
 echo
 echo "Installed."
-echo "  Double-click:  ~/Applications/Font Dashboard.app"
+echo "  Open:          http://127.0.0.1:8777/   (always on, bookmark it)"
+echo "  Or:            ~/Applications/Font Dashboard.app"
 echo "  Terminal:      ~/bin/fontdash --list   |   ~/bin/fontdash --install-new"
+echo "  Stop autostart: fontdash --autostart off"
 echo
 # Just open it. FONTDASH_NO_OPEN=1 skips this.
-[ -n "${FONTDASH_NO_OPEN:-}" ] || open "$APP"
+[ -n "${FONTDASH_NO_OPEN:-}" ] || open "http://127.0.0.1:8777/"

@@ -23,6 +23,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import autostart  # noqa: E402
 import scanner  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -213,8 +214,10 @@ def main():
                     help="skip the Creative Cloud font cache")
     ap.add_argument("--no-browser", action="store_true")
     ap.add_argument("--agent", action="store_true",
-                    help="run headless for the hosted dashboard at "
-                         "aditya31sharma.github.io/fontdash")
+                    help="serve without opening a browser (what launchd runs)")
+    ap.add_argument("--autostart", choices=("on", "off", "status"),
+                    help="keep the dashboard running at http://127.0.0.1:8777 "
+                         "across logins (launchd)")
     ap.add_argument("--list", action="store_true",
                     help="print what is new and exit, no server")
     ap.add_argument("--install-new", action="store_true",
@@ -228,18 +231,31 @@ def main():
     if sys.platform != "darwin":
         print("Heads up: this installs into ~/Library/Fonts, which is macOS only.")
 
+    if args.autostart:
+        script = os.path.join(HERE, "fontdash.py")
+        if args.autostart == "on":
+            return autostart.on(script, args.port,
+                                STATE["scan_dirs"] if args.dir else None, STATE["adobe"])
+        if args.autostart == "off":
+            return autostart.off()
+        return autostart.status(args.port)
+
     if args.list or args.install_new:
         return cli(args.install_new)
 
     url = "http://127.0.0.1:%d/" % args.port
-    httpd = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
+    try:
+        httpd = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
+    except OSError as exc:
+        print("Cannot use port %d: %s" % (args.port, exc))
+        print("Something else is on it, or the dashboard is already running.")
+        return 1
     print("Font Dashboard -> %s" % url)
     print("Scanning: %s" % ", ".join(STATE["scan_dirs"]))
     print("Adobe cache: %s" % ("on" if STATE["adobe"] else "off"))
     print("Ctrl+C to stop.")
     if args.agent:
-        print("Agent mode. Leave this running and use "
-              "https://aditya31sharma.github.io/fontdash/")
+        print("Serving in the background. Open http://127.0.0.1:%d/" % args.port)
     if not args.no_browser and not args.agent:
         threading.Timer(0.4, lambda: webbrowser.open(url)).start()
     try:
@@ -247,7 +263,8 @@ def main():
     except KeyboardInterrupt:
         print("\nbye")
         httpd.shutdown()
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main() or 0)
